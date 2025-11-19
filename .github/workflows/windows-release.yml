@@ -14,10 +14,8 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            platform: x64
             name: x86-64
           - arch: amd64_arm64
-            platform: ARM64
             name: arm64
     
     steps:
@@ -29,21 +27,21 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
       
-      - name: Build
+      - name: Build and Install
         run: |
           cmake -S. -Bbuild -DCMAKE_INSTALL_PREFIX:PATH=install -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release --target install
       
-      - name: Package
+      - name: Package Release
         run: |
           cd install
-          Compress-Archive -Path * -DestinationPath ../OpenCC-${{ matrix.name }}.zip
+          Compress-Archive -Path * -DestinationPath ../OpenCC-windows-${{ matrix.name }}.zip
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenCC-windows-${{ matrix.name }}
-          path: OpenCC-${{ matrix.name }}.zip
+          path: OpenCC-windows-${{ matrix.name }}.zip
   
   create-release:
     needs: build-windows-release
@@ -63,8 +61,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/OpenCC-windows-x86-64/OpenCC-x86-64.zip
-            artifacts/OpenCC-windows-arm64/OpenCC-arm64.zip
+            artifacts/OpenCC-windows-x86-64/OpenCC-windows-x86-64.zip
+            artifacts/OpenCC-windows-arm64/OpenCC-windows-arm64.zip
           draft: false
           prerelease: false
         env:
