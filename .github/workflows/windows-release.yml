@@ -37,8 +37,7 @@ jobs:
       
       - name: Package Release
         run: |
-          cd build\install
-          Compress-Archive -Path * -DestinationPath ../OpenCC-windows-${{ matrix.name }}.zip
+          Compress-Archive -Path .\build\install\* -DestinationPath OpenCC-windows-${{ matrix.name }}.zip
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
