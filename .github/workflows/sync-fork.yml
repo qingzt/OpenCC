@@ -1,0 +1,38 @@
+name: Sync Fork
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync fork with upstream
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add upstream remote if it doesn't exist
+          git remote add upstream https://github.com/BYVoid/OpenCC.git || true
+          
+          # Fetch upstream changes
+          git fetch upstream
+          
+          # Merge upstream/master into current branch
+          git merge upstream/master --no-edit || {
+            echo "Merge conflict detected. Please resolve manually."
+            exit 1
+          }
+          
+          # Push changes
+          git push origin HEAD

@@ -1,0 +1,71 @@
+name: Windows Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    # Allow manual trigger
+
+jobs:
+  build-windows-release:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            platform: x64
+            name: x86-64
+          - arch: amd64_arm64
+            platform: ARM64
+            name: arm64
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      
+      - name: Build
+        run: |
+          cmake -S. -Bbuild -DCMAKE_INSTALL_PREFIX:PATH=install -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release --target install
+      
+      - name: Package
+        run: |
+          cd install
+          Compress-Archive -Path * -DestinationPath ../OpenCC-${{ matrix.name }}.zip
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenCC-windows-${{ matrix.name }}
+          path: OpenCC-${{ matrix.name }}.zip
+  
+  create-release:
+    needs: build-windows-release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/OpenCC-windows-x86-64/OpenCC-x86-64.zip
+            artifacts/OpenCC-windows-arm64/OpenCC-arm64.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
